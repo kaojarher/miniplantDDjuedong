@@ -49,6 +49,10 @@ button:active{background:var(--jade);color:var(--bg)}
 #mei{position:fixed;left:8px;bottom:calc(env(safe-area-inset-bottom,0px) + 128px);display:flex;align-items:flex-end;gap:6px;z-index:4}
 #mb{font-size:30px;line-height:1;padding:5px 8px;border-radius:50%;background:var(--panel);animation:fl 2s ease-in-out infinite}
 #mt{position:static;display:none;font-size:13px;max-width:52vw}
+#bb{top:calc(env(safe-area-inset-top,0px) + 168px);right:8px;width:min(46vw,200px);text-align:center;display:none}
+#bbar{height:8px;background:var(--line);border-radius:4px;margin-top:5px;overflow:hidden}
+#bbar i{display:block;height:100%;background:var(--red)}
+#mm0{right:8px;bottom:calc(env(safe-area-inset-bottom,0px) + 286px);padding:2px;line-height:0;z-index:3}
 @keyframes fl{50%{transform:translateY(-5px)}}
 #cc{right:8px;bottom:calc(env(safe-area-inset-bottom,0px) + 104px);display:grid;grid-template-columns:repeat(2,38px);gap:4px;padding:5px;opacity:.88;z-index:3}
 #cc button{width:38px;height:38px;padding:0;font-size:16px;touch-action:none;-webkit-user-select:none}
@@ -65,8 +69,10 @@ button:active{background:var(--jade);color:var(--bg)}
 <div class="p" id="q"></div>
 <div class="p" id="arrow"><div id="ai">▲</div><div id="ad"></div></div>
 <div class="p" id="fu"></div>
-<div class="p" id="go"><button id="daily">每日挑戰</button><button id="jr">日誌</button><button id="nv">小說</button><button id="yard">製作</button><button id="mu">音效：開</button><button id="inst" style="display:none">安裝</button><button id="sail">啟程・前往下一個區域</button></div>
+<div class="p" id="go"><button id="daily">每日挑戰</button><button id="jr">日誌</button><button id="nv">小說</button><button id="yard">製作</button><button id="set">設定</button><button id="mu">音效：開</button><button id="inst" style="display:none">安裝</button><button id="sail">啟程・前往下一個區域</button></div>
 <div class="p" id="cc"><button data-k="zi" aria-label="拉近鏡頭">＋</button><button data-k="zo" aria-label="拉遠鏡頭">－</button><button data-k="l" aria-label="向左旋轉視角">⟲</button><button data-k="r" aria-label="向右旋轉視角">⟳</button><button data-k="u" aria-label="俯視">▲</button><button data-k="dn" aria-label="平視">▼</button><button data-k="rs" aria-label="重設視角" style="grid-column:span 2;width:80px">重設</button></div>
+<div class="p" id="bb"><b id="bn"></b><div id="bbar"><i id="bbi" style="width:100%"></i></div></div>
+<div class="p" id="mm0"><canvas id="mm" width="96" height="96"></canvas></div>
 <div id="mei"><button id="mb" aria-label="艾拉導覽">🧚</button><div class="p" id="mt"></div></div>
 <div class="p" id="dlg"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -80,7 +86,7 @@ const $=id=>document.getElementById(id);
 const N={aura:['微弱','低迷','穩定','充沛','強烈','失控'],land:['林間空地','荒涼丘陵','冰封河岸','破敗廢墟','古老森林'],power:['流浪冒險者','碼頭商會','城衛軍','鍛造公會','精靈部落','邪教殘黨'],crisis:['魔力風暴','怪物圍城','瘟疫迷霧','魔法失控','寶藏爭奪','古老封印'],boon:['治療藥草','秘銀礦脈','古代遺跡','失落魔典','稀有生物樣本','符文殘片'],sky:['長晝','長夜','雙月','冰雨','暴風雪','極光']};
 const REALM=['新手','見習','熟練','資深','精銳','英雄','傳奇','半神','神選'],TH=[0,60,150,260,400,580,800,1050,1350,1e9];
 const GROUND=[0x62b46f,0xdca85e,0xc3e6f2,0xd5daf0,0x37895d],SKY=[0x86c9e8,0xf2c690,0x9fbdd8,0xb9c6f2,0x4a7c69];
-const NAMES=['乞丐巢','高塔區','碼頭區','絕冬林','寒冰河谷','地下墓窖','城堡廣場','古老礦坑','盧斯坎邊境','學院廣場'];
+const NAMES=['乞丐巢','高塔區','碼頭區','絕冬林','寒冰河谷','地下墓窖','城堡廣場','古老礦坑','盧斯坎邊境','學院廣場'];const THEME=[[3,0,2],[3,3,3],[2,1,4],[4,4,1],[2,0,0],[3,5,5],[0,2,1],[1,3,5],[1,5,4],[0,3,3]];
 function mb(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
 function roll(seed){
   if(seed===1)return{aura:3,land:0,power:1,crisis:4,boon:0,sky:3};
@@ -96,16 +102,17 @@ function roll(seed){
   }
   return r;
 }
+function rollT(sd){const r=roll(sd);if(sd!==1){const t=THEME[(sd*3)%10];r.land=t[0];r.power=t[1];r.crisis=t[2]}return r}
 let S={stones:120,xp:0,visited:0,hull:0,sail:0,comp:0};
 try{const s=JSON.parse(localStorage.getItem('xjsave')||'null');if(s)S=Object.assign(S,s)}catch(e){}
 function save(){try{localStorage.setItem('xjsave',JSON.stringify(S))}catch(e){}}
 
 const R0=100,P=new THREE.Vector3(0,R0,0);
 const renderer=new THREE.WebGLRenderer({canvas:$('c'),antialias:true});
-renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setPixelRatio(S.q==0?1:Math.min(devicePixelRatio,2));
 const scene=new THREE.Scene(),cam=new THREE.PerspectiveCamera(55,1,.1,75);
 cam.position.set(0,R0+8,9);cam.lookAt(0,R0-.5,0);
-scene.add(new THREE.HemisphereLight(0xffffff,0x405060,.95));
+const hemi=new THREE.HemisphereLight(0xffffff,0x405060,.95);scene.add(hemi);
 const sun=new THREE.DirectionalLight(0xffffff,.8);sun.position.set(6,12,8);scene.add(sun);
 function resize(){renderer.setSize(innerWidth,innerHeight);cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix()}
 addEventListener('resize',resize);resize();
@@ -128,14 +135,14 @@ function deco(R,land){
 function marker(color,r){return new THREE.Mesh(new THREE.OctahedronGeometry(r),new THREE.MeshBasicMaterial({color}))}
 
 function build(sd,first){
-  seed=sd;info=roll(sd);nextSeed=Math.floor(Math.random()*9000)+2;herbs=0;done=false;tArrive=performance.now();
+  seed=sd;info=rollT(sd);nextSeed=Math.floor(Math.random()*9000)+2;herbs=0;done=false;tArrive=performance.now();bossHere=!daily&&((S.visited+1)%3==0);bossDead=false;bossAnn=false;boss=null;
   if(planet)scene.remove(planet);moons.forEach(m=>scene.remove(m));moons=[];mons=[];bullets.forEach(b=>scene.remove(b.m));bullets=[];
   planet=new THREE.Group();scene.add(planet);
   const R=mb(sd*7+3),geo=new THREE.IcosahedronGeometry(R0,24),pos=geo.attributes.position,col=[],base=new THREE.Color(GROUND[info.land]);
   for(let i=0;i<pos.count;i+=3){const k=.88+R()*.2,c=base.clone().multiplyScalar(k);for(let j=0;j<3;j++)col.push(c.r,c.g,c.b)}
   geo.setAttribute('color',new THREE.Float32BufferAttribute(col,3));
   planet.add(new THREE.Mesh(geo,new THREE.MeshLambertMaterial({vertexColors:true,flatShading:true})));
-  for(let i=0;i<900;i++){const g=deco(R,info.land);place(g,rdir(R,-1,.995),0);g.rotateY(R()*6)}
+  const TN=[300,600,900][S.q==null?2:S.q];for(let i=0;i<900;i++){const g=deco(R,info.land),v=rdir(R,-1,.995);if(i<TN){place(g,v,0);g.rotateY(R()*6)}else R()}
   const tw=new THREE.Mesh(new THREE.CylinderGeometry(.5,.9,3.6,6),new THREE.MeshLambertMaterial({color:0xe9dcc0,flatShading:true}));tw.position.y=1.8;
   const roof=new THREE.Mesh(new THREE.SphereGeometry(.8,12,8),new THREE.MeshBasicMaterial({color:0x4cc3ff}));roof.position.y=4.3;
   const lm=new THREE.Group();lm.add(tw,roof);place(lm,rdir(R,.85,.99),0);
@@ -152,7 +159,7 @@ function build(sd,first){
   crisisN=crisisLeft=Math.max(2,CR[info.crisis][1]-(S.hull>>1));crT=0;crFail=false;for(let i=0;i<crisisN;i++){const m=marker(0xff5c4d,.4);place(m,rdir(R,.85,.997),1.1);items.push({m,t:'bad',k:i})}
   const night=info.sky==1||info.sky==2;
   const sk=new THREE.Color(SKY[info.land]);if(night)sk.multiplyScalar(.28);
-  scene.background=sk;scene.fog=new THREE.Fog(sk,25,62);
+  scene.background=sk;scene.fog=new THREE.Fog(sk,25,62);baseSky=sk.clone();
   if(info.sky==2){[[-20,R0+28,-40,3],[22,R0+34,-50,2]].forEach(a=>{const m=new THREE.Mesh(new THREE.SphereGeometry(a[3],16,12),new THREE.MeshBasicMaterial({color:0xfff4cc,fog:false}));m.position.set(a[0],a[1],a[2]);scene.add(m);moons.push(m)})}
   ui();
   const nm=NAMES[(sd*3)%NAMES.length];
@@ -164,13 +171,13 @@ function lvl(){let i=0;while(S.xp>=TH[i+1])i++;return i}
 function ui(){
   if(!info)return;const l=lvl();
   $('card').innerHTML='<b>'+(info.name||'')+'</b> <span>S-'+String(seed).padStart(4,'0')+'</span><br><span>魔力場</span>'+N.aura[info.aura]+'・'+N.land[info.land]+'<br><span>勢力</span>'+N.power[info.power]+'<br><span>危機</span>'+N.crisis[info.crisis]+'<br><span>發現</span>'+N.boon[info.boon]+'・'+N.sky[info.sky];
-  $('st').innerHTML=(S.hero?'<b>'+esc(S.hero.name)+'</b><br>':'')+'金幣 '+S.stones+'<br>法杖・'+SW[(S.sw||0)]+'<br>武器 '+GNm(S.wpn||0)+'・護盾 '+GNm(S.arm||0)+'<br>魔晶核心 '+FL[S.fl||1]+'・同伴 '+(S.party||[]).length+'/3<br>生命 <span id="hp">'+Math.ceil(php)+'</span>/100<br>等階：'+REALM[l]+'<div id="bar"><i style="width:'+Math.min(100,(S.xp-TH[l])/(TH[l+1]-TH[l])*100)+'%"></i></div>';
-  $('q').innerHTML=(accepted?'委託：'+NPC[info.power][0]+'<br>':'')+'收集'+N.boon[info.boon]+' <em>'+herbs+'/5</em><br>'+CR[info.crisis][3]+' <em>'+(crFail?'失敗':(crisisN-crisisLeft)+'/'+crisisN)+'</em><span id="ct"></span>'+'<br>修復傳送門 <em>'+(fixed?'完成':parts+'/3')+'</em>'+(daily?'<br>每日挑戰 <span id="dt"></span>':'')+(done?'<br>任務完成':'')+questTxt();
-  const cost=fare();const pv=(()=>{const r=roll(nextSeed),a=[];if(S.comp>0)a.push('魔力場'+N.aura[r.aura]);if(S.comp>1)a.push(N.land[r.land]);if(S.comp>2)a.push(N.crisis[r.crisis]);return a.join('・')})();$('sail').textContent='啟程・'+(cost?cost+' 金幣':'免費')+(pv?'（前方：'+pv+'）':'');
+  $('st').innerHTML=(S.hero?'<b>'+esc(S.hero.name)+'</b>'+(cls()>=0?'・'+CL[cls()]:'')+'<br>':'')+'金幣 '+S.stones+'<br>法杖・'+SW[(S.sw||0)]+'<br>武器 '+GNm(S.wpn||0)+'・護盾 '+GNm(S.arm||0)+'<br>魔晶核心 '+FL[S.fl||1]+'・同伴 '+(S.party||[]).length+'/3<br>生命 <span id="hp">'+Math.ceil(php)+'</span>/100<br>等階：'+REALM[l]+'<div id="bar"><i style="width:'+Math.min(100,(S.xp-TH[l])/(TH[l+1]-TH[l])*100)+'%"></i></div>';
+  $('q').innerHTML=(accepted?'委託：'+NPC[info.power][0]+'<br>':'')+'收集'+N.boon[info.boon]+' <em>'+herbs+'/5</em><br>'+CR[info.crisis][3]+' <em>'+(crFail?'失敗':(crisisN-crisisLeft)+'/'+crisisN)+'</em><span id="ct"></span>'+'<br>修復傳送門 <em>'+(fixed?'完成':parts+'/3')+'</em>'+(daily?'<br>每日挑戰 <span id="dt"></span>':'')+(done?'<br>任務完成':'')+bossTxt()+questTxt();
+  const cost=fare();const pv=(()=>{const r=rollT(nextSeed),a=[];if(S.comp>0)a.push('魔力場'+N.aura[r.aura]);if(S.comp>1)a.push(N.land[r.land]);if(S.comp>2)a.push(N.crisis[r.crisis]);return a.join('・')})();$('sail').textContent='啟程・'+(cost?cost+' 金幣':'免費')+(pv?'（前方：'+pv+'）':'');
 }
 function fare(){return S.visited==0||fixed?0:Math.max(0,50+(info?info.aura*10:0)-S.sail*8)}
 let mt;function msg(t){const f=$('fu');f.textContent=t;f.style.opacity=1;clearTimeout(mt);mt=setTimeout(()=>f.style.opacity=.0,5200)}
-function gain(xp,st){snd('get');const mul=1+info.aura*.2;xp=Math.round(xp*mul*(buffT>0?1.5:1)*(has(5)?1.2:1));st=Math.round(st*mul*(has(1)?1.2:1));const b=lvl();S.xp+=xp;S.stones+=st;if(lvl()>b){snd('up');msg('晉升！你的等階提升為「'+REALM[lvl()]+'」。')}save();ui()}
+function gain(xp,st){snd('get');const mul=(1+info.aura*.2)*(isNight?1.25:1);xp=Math.round(xp*mul*(buffT>0?1.5:1)*(has(5)?1.2:1));st=Math.round(st*mul*(has(1)?1.2:1));const b=lvl();S.xp+=xp;S.stones+=st;if(lvl()>b){snd('up');msg('晉升！你的等階提升為「'+REALM[lvl()]+'」。')}save();ui()}
 
 const NPC=[['流浪冒險者','瘟疫封城後我的行囊全丟了，能幫我找回補給嗎？'],['商會會長','封城以來商路斷絕，替我收集五份補給，報酬好說。'],['城衛隊長','此處魔力紊亂，瘟疫又在蔓延，先收集補給穩住防線吧。'],['鍛造公會長','魔力調不穩，不收貨。去收集補給，再回來煉製。'],['精靈長老','森林的魔力場不穩，收集些補給安撫族人。'],['隱居法師','你身上有絕冬城的氣味。收集補給，順便查清瘟疫的源頭。']];
 let busy=false,accepted=false,npcCD=0;
@@ -216,28 +223,29 @@ let parts=0,fixed=false,daily=false,dDone=false,dT=0;
 let mons=[],bullets=[],php=100,spT=0,hurt=0,shootT=0,fireT=0;const MO=['🐀','🐺','🐗','🦂','🦇','🐉'],ET={};
 function emo(e){if(!ET[e]){const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d');x.font='100px serif';x.textAlign='center';x.textBaseline='middle';x.fillText(e,64,70);ET[e]=new THREE.CanvasTexture(c)}return ET[e]}
 function spawn(){const pl=P.clone().applyQuaternion(planet.quaternion.clone().invert()),ax=new THREE.Vector3(Math.random()-.5,Math.random()-.5,Math.random()-.5).cross(pl).normalize(),pos=pl.clone().applyAxisAngle(ax,(35+Math.random()*15)/R0).setLength(R0+1.2),ev=Math.random()<(info.power==5?.8:.3)*(incT>0?.3:1),s=ev?evil():new THREE.Sprite(new THREE.SpriteMaterial({map:emo(MO[info.aura])}));if(!ev)s.scale.set(2.4,2.4,1);s.position.copy(ev?pos.clone().setLength(R0):pos);planet.add(s);mons.push({s,ev,w:new THREE.Vector3(),hp:(2+info.aura*2)*(ev?1.5:1)})}
-function die(){php=100;S.stones=Math.max(0,S.stones-30);mons.forEach(o=>planet.remove(o.s));mons=[];msg('生命耗盡，你被同伴送回營地休養，損失 30 金幣。');save();ui()}
+function die(){php=100;S.stones=Math.max(0,S.stones-30);mons.forEach(o=>planet.remove(o.s));mons=[];if(boss){boss=null;bossAnn=false}msg('生命耗盡，你被同伴送回營地休養，損失 30 金幣。');save();ui()}
 function fight(dt){const pl=P.clone().applyQuaternion(planet.quaternion.clone().invert()),act=crisisLeft>0&&crisisLeft<crisisN&&!crFail;
-  spT+=dt;hurt-=dt;shootT-=dt;fireT-=dt;buffT-=dt;incT-=dt;spdT-=dt;atkT-=dt;partyT-=dt;snapT-=dt;if(snapT<=0){snapT=20+Math.random()*20;wantSnap=true}if(partyT<=0){partyT=4;partyN++;if(has(0)){const t=mons.filter(o=>o.w.distanceTo(P)<24).sort((a,b)=>a.w.distanceTo(P)-b.w.distanceTo(P))[0];if(t){dmg(t,1.5+lvl()*.3);puff(t.w.clone(),1,1,.4,2)}}if(has(4)&&partyN%2==0)php=Math.min(100,php+10)}ghs=ghs.filter(g=>{g.life-=dt;if(g.life<=0){scene.remove(g.m);return false}const o=(g.b||.4)*g.life/(g.max||.28);g.m.traverse(c=>{if(c.material)c.material.opacity=o});if(g.gr)g.m.scale.setScalar(g.s0+g.gr*(1-g.life/g.max));return true});if((S.sw||0)>=4&&fireT<=0&&mons.length){fireT=6;mons.slice().forEach(o=>dmg(o,3));msg('流星火雨：天降隕石！')}if(spT>(act?3:Math.max(4,10-info.aura))&&mons.length<2+info.aura+(act?3:0)+(info.crisis==1?2:0)){spT=0;spawn()}
-  mons.forEach(o=>{const mp=o.s.position;mp.applyAxisAngle(mp.clone().cross(pl).normalize(),dt*(.022+info.aura*.003));o.s.getWorldPosition(o.w);if(o.ev)orient(o.s,pl);
-    if(o.w.distanceTo(P)<1.8&&hurt<=0){hurt=.9;snd('hurt');if(shield>0)shield--;else php-=Math.max(4,12+info.aura*2-S.hull*2-(S.arm||0)*2)*(has(2)?.75:1)}});
+  spT+=dt;hurt-=dt;shootT-=dt;fireT-=dt;buffT-=dt;incT-=dt;spdT-=dt;atkT-=dt;partyT-=dt;snapT-=dt;if(snapT<=0){snapT=20+Math.random()*20;wantSnap=true}if(partyT<=0){partyT=4;partyN++;if(has(0)){const t=mons.filter(o=>o.w.distanceTo(P)<24).sort((a,b)=>a.w.distanceTo(P)-b.w.distanceTo(P))[0];if(t){dmg(t,1.5+lvl()*.3);puff(t.w.clone(),1,1,.4,2)}}if(has(4)&&partyN%2==0)php=Math.min(100,php+10)}ghs=ghs.filter(g=>{g.life-=dt;if(g.life<=0){scene.remove(g.m);return false}const o=(g.b||.4)*g.life/(g.max||.28);g.m.traverse(c=>{if(c.material)c.material.opacity=o});if(g.gr)g.m.scale.setScalar(g.s0+g.gr*(1-g.life/g.max));return true});if((S.sw||0)>=4&&fireT<=0&&mons.length){fireT=6;mons.slice().forEach(o=>dmg(o,3));msg('流星火雨：天降隕石！')}if(spT>(act?3:Math.max(4,10-info.aura))&&mons.length<2+info.aura+(isNight?1:0)+(act?3:0)+(info.crisis==1?2:0)){spT=0;spawn()}
+  mons.forEach(o=>{const mp=o.s.position;mp.applyAxisAngle(mp.clone().cross(pl).normalize(),dt*(.022+info.aura*.003)*(o.boss?(o.hp<o.max/2?1.5:.8):1));o.s.getWorldPosition(o.w);if(o.ev)orient(o.s,pl);
+    if(o.w.distanceTo(P)<(o.big?3.2:1.8)&&hurt<=0){hurt=.9;snd('hurt');if(shield>0)shield--;else php-=Math.max(4,12+info.aura*2-S.hull*2-(S.arm||0)*2)*(has(2)?.75:1)*(o.boss?1.5:1)*(cls()==0?.8:1)}});
   if(php<=0){if((S.inv&&S.inv.pill)>0){S.inv.pill--;php=100;msg('治療藥水救了你一命。');save()}else{die();return}}
-  if(shootT<=0){const tr=(S.sw||0),ls=mons.filter(o=>o.w.distanceTo(P)<24).sort((a,b)=>a.w.distanceTo(P)-b.w.distanceTo(P));if(ls.length){shootT=.65;(tr==1||tr==4?[0,1]:[0]).forEach(k=>{const t=ls[Math.min(k,ls.length-1)],m=makeBlade(tr);m.position.set(P.x+(k?.4:0),P.y+1.2,P.z);scene.add(m);bullets.push({m,t,tr})})}}
+  if(shootT<=0){const tr=(S.sw||0),ls=mons.filter(o=>o.w.distanceTo(P)<24).sort((a,b)=>a.w.distanceTo(P)-b.w.distanceTo(P));if(ls.length){shootT=.65*(cls()==2?.85:1);(tr==1||tr==4?[0,1]:[0]).forEach(k=>{const t=ls[Math.min(k,ls.length-1)],m=makeBlade(tr);m.position.set(P.x+(k?.4:0),P.y+1.2,P.z);scene.add(m);bullets.push({m,t,tr})})}}
   bullets=bullets.filter(b=>{if(!mons.includes(b.t)){scene.remove(b.m);return false}const d=b.t.w.clone().sub(b.m.position),l=d.length();
     if(l<1.4){hit(b);scene.remove(b.m);return false}
     b.m.lookAt(b.t.w);b.tt=(b.tt||0)-dt;if(b.tr>0&&b.tt<=0){if(b.tr>=2){b.tt=.03;b.m.children.forEach(c=>{const p=new THREE.Vector3();c.getWorldPosition(p);p.x+=(Math.random()-.5)*.2;p.y+=(Math.random()-.5)*.2;puff(p,b.tr,.7,.6,1.6)})}else{b.tt=b.tr>1?.025:.06;const gm=makeBlade(b.tr,true);gm.position.copy(b.m.position);gm.quaternion.copy(b.m.quaternion);scene.add(gm);ghs.push({m:gm,life:.28})}}b.m.position.add(d.multiplyScalar(Math.min(1,52*dt/l)));return true});
-  if(!mons.some(o=>o.w.distanceTo(P)<25))php=Math.min(100,php+dt*4);
+  if(!mons.some(o=>o.w.distanceTo(P)<25))php=Math.min(100,php+dt*(cls()==3?8:4));else if(cls()==3)php=Math.min(100,php+dt*.8);
   const e=$('hp');if(e)e.textContent=Math.ceil(php)}
 function dailySeed(){const d=new Date();return d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate()}
 function startDaily(){if(busy)return;daily=true;dDone=false;dT=0;build(dailySeed(),false);msg('每日挑戰：收集補給、化解危機、修復傳送門，越快越好。當天種子全球相同。')}
 $('daily').onclick=startDaily;$('jr').onclick=()=>{if(!busy)journal()};
 function journal(){const c=document.createElement('canvas');c.width=600;c.height=800;const x=c.getContext('2d');x.fillStyle='#070d1c';x.fillRect(0,0,600,800);x.fillStyle='#6fd8ff';x.font='bold 44px sans-serif';x.fillText((S.hero?S.hero.name+'・':'')+'冒險日誌',40,80);x.fillStyle='#f1ecdc';x.font='26px serif';x.fillText('等階：'+REALM[lvl()]+'　金幣 '+S.stones,40,140);x.fillText('體魄 '+S.hull+'　傳送 '+S.sail+'　占卜 '+S.comp+'　武器 '+GNm(S.wpn||0)+'　護盾 '+GNm(S.arm||0),40,184);
-  (S.log||[]).forEach((l,i)=>{const r=roll(l.seed);x.fillText('P-'+String(l.seed).padStart(4,'0')+' '+l.name+' '+N.aura[r.aura]+'・'+N.land[r.land]+'・'+N.crisis[r.crisis],40,250+i*52)});
+  (S.log||[]).forEach((l,i)=>{const r=rollT(l.seed);x.fillText('P-'+String(l.seed).padStart(4,'0')+' '+l.name+' '+N.aura[r.aura]+'・'+N.land[r.land]+'・'+N.crisis[r.crisis],40,250+i*52)});
   x.fillStyle='#a9bcc0';x.font='22px serif';x.fillText('今日挑戰種子 '+dailySeed()+(S.dbest?'　最佳 '+S.dbest.t+' 秒':''),40,740);
   const im=new Image();im.src=c.toDataURL('image/png');im.style.cssText='width:100%;border-radius:8px;margin-top:8px';
   const d=dlg('<b>冒險日誌</b><br><span style="color:var(--dim)">長按圖片即可儲存分享</span>',[['關閉',shut]]);d.insertBefore(im,d.querySelector('.r'))}
 const NE=['🧔','👨‍💼','💂','👨‍🔧','🧝','🧙'],RE=['👨‍🌾','🤠','👷','👩‍⚕️','💂','👨‍🍳','👮','🧓'];
-function xian(e){const g=new THREE.Group(),sp=new THREE.Sprite(SM[e]||(SM[e]=new THREE.SpriteMaterial({map:emo(e),alphaTest:.3})));sp.scale.set(2.2,2.2,1);sp.position.y=1;g.add(sp);return g}
+function xian(e){const g=new THREE.Group(),sp=new THREE.Sprite(SM[e]||(SM[e]=new THREE.SpriteMaterial({map:emo(e),alphaTest:.3})));sp.scale.set(2.2,2.2,1);sp.position.y=1;g.add(sp);g.userData.sp=sp;g.userData.e=e;return g}
+const SMF={};function flip(g,d){const sp=g&&g.userData.sp;if(!sp)return;const e=g.userData.e;let m=SM[e];if(d<0)m=SMF[e]||(SMF[e]=(()=>{const t=emo(e).clone();t.needsUpdate=true;t.wrapS=THREE.RepeatWrapping;t.repeat.x=-1;t.offset.x=1;return new THREE.SpriteMaterial({map:t,alphaTest:.3})})());if(m&&sp.material!==m)sp.material=m}
 function hall(w,h,wc,rc,lv){const g=new THREE.Group(),L=c=>new THREE.MeshLambertMaterial({color:c,flatShading:true}),bs=new THREE.Mesh(new THREE.CylinderGeometry(w*.8,w*.85,.3,12),L(0x8a929a));bs.position.y=.15;g.add(bs);let y=.3,s=w*.6;
   for(let i=0;i<lv;i++){s=w*(1-i*.2)*.6;const b=new THREE.Mesh(new THREE.CylinderGeometry(s,s*1.05,h,12),L(wc));b.position.y=y+h/2;g.add(b);
     const r=new THREE.Mesh(new THREE.TorusGeometry(s*1.03,.07,6,16),new THREE.MeshBasicMaterial({color:0x7ee0ff}));r.rotation.x=Math.PI/2;r.position.y=y+h*.62;g.add(r);y+=h}
@@ -247,6 +255,7 @@ function town(R,pw){const C=[[0xc9b38a,0x5a4a3a],[0xe8dcc0,0x2f6f66],[0xdfe6ee,0
   for(let i=0;i<6;i++){const h=hall(2.6+R()*1.2,1.8+R()*.6,C[0],C[1],1);place(h,rdir(R,.93,.985),0);h.rotateY(R()*6)}
   place(hall(3.4,1.7,C[0],C[1],pw==2||pw==5?4:3),rdir(R,.9,.96),0)}
 $('sail').onclick=()=>{
+  if(bossHere&&!bossDead){msg(bossAnn?'艾拉：頭目尚未擊敗，無法離開這個區域！':'艾拉：先收集補給並化解危機，才能引出本區的頭目。');return}
   const c=fare();if(S.stones<c){msg('艾拉：金幣不足，還差 '+(c-S.stones)+'。回區域上再收集看看。');return}
   S.stones-=c;S.visited++;save();daily=false;writeChap(info,Object.assign({done,crisisOk:crisisLeft==0&&!crFail,fixed},EV));EV={};build(nextSeed);
 };
@@ -281,10 +290,10 @@ function loop(now){
     if(hY)camYaw+=hY*dt*1.6;if(hP)camPitch=cp(camPitch+hP*dt*.9);if(hZ)camZoom=cz(camZoom*Math.exp(hZ*dt*.9));
     const Rc=12.04*camZoom,ce=Math.cos(camPitch);cam.position.set(Rc*ce*Math.sin(camYaw),R0+Rc*Math.sin(camPitch),Rc*ce*Math.cos(camYaw));cam.lookAt(0,R0-.5,0);
     const fr=75*Math.max(1,camZoom);if(Math.abs(fr-lastFar)>.5){lastFar=fr;cam.far=fr;cam.updateProjectionMatrix()}if(scene.fog){scene.fog.near=25*camZoom;scene.fog.far=62*camZoom}
-    const c=Math.cos(camYaw),sn=Math.sin(camYaw),nx=ix*c-iy*sn,ny=ix*sn+iy*c;ix=nx;iy=ny}
+    if(Math.abs(ix)>.25)face=ix>0?1:-1;const c=Math.cos(camYaw),sn=Math.sin(camYaw),nx=ix*c-iy*sn,ny=ix*sn+iy*c;ix=nx;iy=ny}
   const m=Math.hypot(ix,iy);
   if(m>.05&&!busy){if(m>1){ix/=m;iy/=m}
-    ax.set(iy,0,ix).normalize();q.setFromAxisAngle(ax,Math.min(m,1)*dt*.06*(spdT>0?1.4:1));planet.quaternion.premultiply(q);
+    ax.set(iy,0,ix).normalize();q.setFromAxisAngle(ax,Math.min(m,1)*dt*.06*(spdT>0?1.4:1)*(cls()==2?1.15:1));planet.quaternion.premultiply(q);
     hero.rotation.y=Math.atan2(ix,-iy);hero.position.y=R0+Math.abs(Math.sin(now/90))*.12;
   }else hero.position.y=R0;
   items.forEach(it=>{if(it.gone)return;if(it.t!='npc'&&it.t!='npc2'&&it.t!='portal')it.m.rotation.y+=dt*2;it.m.getWorldPosition(wp);
@@ -311,21 +320,25 @@ function loop(now){
   const ar=$('arrow');
   if(best){const cy=Math.cos(camYaw),sy=Math.sin(camYaw),ang=Math.atan2(best.x*cy-best.z*sy,-best.x*sy-best.z*cy),arc=Math.round(Math.acos(Math.min(1,best.dot(P)/(best.length()*R0)))*R0);$('ai').style.transform='rotate('+ang+'rad)';$('ad').textContent=arc+' 步';ar.style.display='block';const dx=Math.sin(ang),dy=-Math.cos(ang),hw=innerWidth/2-48,hh=innerHeight/2-170,t=Math.min(Math.abs(dx)>1e-3?hw/Math.abs(dx):1e9,Math.abs(dy)>1e-3?hh/Math.abs(dy):1e9);ar.style.transform='translate('+(innerWidth/2+dx*t-32)+'px,'+(innerHeight/2+dy*t-30)+'px)'}else ar.style.display='none';
   if(!busy)fight(dt);
+  if(bossHere&&!boss&&!bossDead&&!bossAnn&&!busy&&done&&(crisisLeft==0||crFail))bossStart();
+  {const bb=$('bb');if(boss){bb.style.display='block';$('bn').textContent=boss.name;$('bbi').style.width=Math.max(0,boss.hp/boss.max*100)+'%'}else bb.style.display='none'}
   if(daily&&!dDone&&!busy){dT+=dt;const e=$('dt');if(e)e.textContent=dT.toFixed(1)+' 秒';
     if(done&&fixed&&(crisisLeft==0||crFail)){dDone=true;const t=+(dT+(crFail?15:0)).toFixed(1),k=String(seed);if(!S.dbest||S.dbest.k!=k||t<S.dbest.t)S.dbest={k,t};save();dlg('<b>每日挑戰完成</b><br>種子 '+seed+'<br>成績 '+t+' 秒'+(crFail?'（含危機失敗加罰 15 秒）':'')+'<br>今日最佳 '+S.dbest.t+' 秒',[['日誌',journal],['關閉',shut]])}}
+  {const f=.4+.6*(.5+.5*Math.cos(now/1000/180*6.283));if(baseSky){scene.background.copy(baseSky).multiplyScalar(f);if(scene.fog)scene.fog.color.copy(scene.background)}hemi.intensity=.5+.45*f;sun.intensity=.3+.5*f;const nn=f<.62;if(nn!=isNight){isNight=nn;msg(nn?'艾拉：夜幕降臨，怪物更活躍，但收穫更豐厚。':'艾拉：天亮了。')}flip(hero.userData.b,face);tms.forEach(m=>flip(m,face));if((mmT+=dt)>.1){mmT=0;drawMM()}}
   renderer.render(scene,cam);if(wantSnap)snap();shellUp(now);crestUp(now);partyUp(now);sw.material.color.set(SC[(S.sw||0)]);
 }
 
 const esc=s=>String(s).replace(/[&<>"']/g,c=>'&#'+c.charCodeAt(0)+';');
 const SW=['魔法飛彈','雙重飛彈','奧術脈衝','過載脈衝','流星火雨'],FL=['','初啟','穩定','超載','傳說極限'],SC=[0xffe08a,0x9fe6ff,0xc79bff,0xff7a2a,0xff4fd8];
-function dmg(o,d){o.hp-=d;if(o.hp<=0&&mons.includes(o)){planet.remove(o.s);mons=mons.filter(q=>q!==o);qEv(o.ev?'evil':'beast',1);gain((5+info.aura*2)*(o.ev?2:1),(8+info.aura*3)*(o.ev?2:1))}}
-function hit(b){const t=b.t,d=(1+lvl()*.5+(S.wpn||0)*.5)*(atkT>0?1.5:1);if(b.tr>=2){php=Math.min(100,php+1.5);for(let i=0;i<5;i++){const q=t.w.clone();q.x+=(Math.random()-.5)*.8;q.y+=(Math.random()-.5)*.8;puff(q,b.tr,1.2,.6,3)}}if(b.tr>=3)mons.slice().forEach(o=>{if(o!==t&&o.w.distanceTo(t.w)<6)dmg(o,d*.6)});dmg(t,d)}
+function dmg(o,d){o.hp-=d;if(o.boss&&!o.rg&&o.hp<o.max/2&&o.hp>0){o.rg=1;msg('頭目狂暴！牠的動作變快了。');snd('bad')}if(o.hp<=0&&mons.includes(o)){planet.remove(o.s);mons=mons.filter(q=>q!==o);if(o.boss){bossWin();return}qEv(o.ev?'evil':'beast',1);gain((5+info.aura*2)*(o.ev?2:1),(8+info.aura*3)*(o.ev?2:1))}}
+function hit(b){const t=b.t,d=(1+lvl()*.5+(S.wpn||0)*.5)*(atkT>0?1.5:1)*(cls()==1?1.25:1);if(b.tr>=2){php=Math.min(100,php+1.5);for(let i=0;i<5;i++){const q=t.w.clone();q.x+=(Math.random()-.5)*.8;q.y+=(Math.random()-.5)*.8;puff(q,b.tr,1.2,.6,3)}}if(b.tr>=3)mons.slice().forEach(o=>{if(o!==t&&o.w.distanceTo(t.w)<6)dmg(o,d*.6)});dmg(t,d)}
 const sw=new THREE.Mesh(new THREE.BoxGeometry(.12,.14,.5),new THREE.MeshBasicMaterial({color:0xffe08a}));sw.position.set(.5,.95,.3);hero.add(sw);const sh=new THREE.Group(),shM=new THREE.MeshBasicMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,opacity:.9});[[.262,.54,1.02,.5],[.282,.25,.54,1.2]].forEach(a=>{const m=new THREE.Mesh(new THREE.CylinderGeometry(a[0],a[1],a[2],18,1,true),shM);m.position.y=a[3];sh.add(m)});hero.add(sh);
-function setHero(){hero.children.slice().forEach(c=>{if(c!==sw&&c!==sh)hero.remove(c)});hero.add(xian(S.hero&&S.hero.g?'🧝‍♀️':'🧝‍♂️'));ui()}
-function create(){let g=0,ed=false;const d=dlg('<b>冒險者登錄</b><br>選擇性別並為冒險者命名<br><span id="gs" style="color:var(--jade)">目前：男</span><br><input id="nm" maxlength="8" value="雷恩" style="margin-top:8px;width:100%;box-sizing:border-box;font:inherit;padding:8px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--fg)">',[['男',()=>sg(0)],['女',()=>sg(1)],['出發',()=>{S.hero={g,name:(nm.value.trim()||(g?'艾琳':'雷恩')).slice(0,8)};save();setHero();shut();mei('我是艾拉，你的使魔精靈！點我隨時有提示。');setTimeout(()=>mei('法杖會自動攻擊，等階越高招式越強；魔晶核心可在鍛造時進化。'),5000);setTimeout(()=>mei('絕冬城被「哀嚎瘟疫」封城，查出源頭、化解危機，天亮前救回這座城吧。'),12000)}]]),nm=d.querySelector('#nm');
+function setHero(){hero.children.slice().forEach(c=>{if(c!==sw&&c!==sh)hero.remove(c)});{const b=xian(S.hero&&S.hero.g?'🧝‍♀️':'🧝‍♂️');hero.add(b);hero.userData.b=b};ui()}
+function create(){let g=0,ed=false;const d=dlg('<b>冒險者登錄</b><br>選擇性別並為冒險者命名<br><span id="gs" style="color:var(--jade)">目前：男</span><br><input id="nm" maxlength="8" value="雷恩" style="margin-top:8px;width:100%;box-sizing:border-box;font:inherit;padding:8px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--fg)">',[['男',()=>sg(0)],['女',()=>sg(1)],['出發',()=>{S.hero={g,name:(nm.value.trim()||(g?'艾琳':'雷恩')).slice(0,8)};save();setHero();shut();setTimeout(()=>classPick(prologue),400);mei('我是艾拉，你的使魔精靈！點我隨時有提示。');setTimeout(()=>mei('法杖會自動攻擊，等階越高招式越強；魔晶核心可在鍛造時進化。'),5000);setTimeout(()=>mei('絕冬城被「哀嚎瘟疫」封城，查出源頭、化解危機，天亮前救回這座城吧。'),12000)}]]),nm=d.querySelector('#nm');
   nm.oninput=()=>{ed=true};function sg(x){g=x;d.querySelector('#gs').textContent='目前：'+(x?'女':'男');if(!ed)nm.value=x?'艾琳':'雷恩'}}
 let mtm,tp=0;function mei(t){const e=$('mt');e.textContent='艾拉：'+t;e.style.display='block';clearTimeout(mtm);mtm=setTimeout(()=>e.style.display='none',7000)}
 function tip(){if(!S.hero)return;let t;
+  if(bossHere&&!bossDead&&done&&(crisisLeft==0||crFail)){mei(boss?'頭目就在附近！保持移動拉開距離，法杖會自動攻擊。':'頭目即將現身……');return}
   if(herbs<5)t='先收集齊 5 份'+N.boon[info.boon]+'（還差 '+(5-herbs)+' 份），跟著畫面邊緣的箭頭走。';
   else if(crisisLeft>0&&!crFail)t='化解'+N.crisis[info.crisis]+'：碰觸紅色目標，還剩 '+crisisLeft+' 處。';
   else if(parts<3)t='去找符文碎片（'+parts+'/3），集齊才能修復傳送門。';
@@ -409,11 +422,40 @@ function questTxt(){items.forEach(it=>{if(it.t=='npc2'&&it.sp)it.sp.material.map
 function talk2(i){const q=QS[i];if(!q)return;const b=[];let tx='<b>'+q.name+'</b><br>';
   if(q.st==0){tx+=LN[q.k](q.need)+'<br><span style="color:var(--dim)">【支線】'+q.title+'　獎勵：經驗值 '+q.xp+'・金幣 '+q.sd+'</span>';b.push(['接下任務',()=>{q.st=1;ui();shut()}])}
   else if(q.st==1){tx+='任務進行中：'+q.title+'（'+q.have+'/'+q.need+'）';if(q.k=='deliver')b.push(['交付素材（持有 '+(S.herb||0)+'）',()=>{if((S.herb||0)>=q.need){S.herb-=q.need;q.have=q.need;q.st=2;save();msg('艾拉：素材已交付，可以領賞了。');ui();talk2(i)}else{msg('素材不足。');}}])}
-  else if(q.st==2){tx+='辛苦了，這是答謝。';b.push(['領取獎勵',()=>{q.st=3;(EV.qd=EV.qd||[]).push(q.title);gain(q.xp,q.sd);msg('支線完成：'+q.title+'。');ui();shut()}])}
+  else if(q.st==2){tx+='辛苦了，這是答謝。';b.push(['領取獎勵',()=>{q.st=3;(EV.qd=EV.qd||[]).push(q.title);dice('擲骰決定答謝豐厚程度（d20）',r=>{const k=r==20?2:r>=15?1.5:r<=5?.75:1;gain(Math.round(q.xp*k),Math.round(q.sd*k));msg('支線完成：'+q.title+(k!=1?'（報酬 ×'+k+'）':'')+'。');ui();shut()})}])}
   else tx+='多謝你，改日再會。';
   b.push(['離開',shut]);dlg(tx,b)}
 
 let EV={};
+const ST=[['鼠穴之夜','🐀','疫鼠之王','下水道深處，成群的老鼠身上帶著不屬於自然的毒斑，牠們的王正啃食封城的糧倉。','疫鼠之王倒下，巢穴裡留下刻著陌生符號的酒桶碎片——有人故意把毒送進了城。'],
+['霜牙之嚎','🐺','霜牙狼首','城外的寒風捎來嚎叫，狼群被某種氣味驅趕，正衝向城門。','狼首頸上掛著一枚染血的徽記，與酒桶上的符號一致。'],
+['祭司的低語','🧛','邪教祭司','廢棄的神殿裡，邪教祭司正吟誦儀式，把瘟疫引向更深的城區。','祭司臨死前笑著說：「這只是序幕，真正的主人在墓窖之下。」'],
+['墓窖蝠群','🦇','墓窖蝠后','墓窖深處的黑暗中蝙蝠翻湧如潮，牠們守著通往最底層的封印。','封印鬆動了，地底傳來古老的震動，有什麼東西正被喚醒。'],
+['寒霜之龍','🐉','寒霜巨龍','源頭就在地底熱泉與寒冰的交界：一頭被邪教驚醒、被瘟疫扭曲的巨龍，正吐出帶毒的霜息。','巨龍倒下，毒霧散去，絕冬城的鐘聲在長夜盡頭再度響起——但幕後的黑手尚未現身。']];
+let boss=null,bossHere=false,bossDead=false,bossAnn=false,baseSky=null,isNight=false,mmT=0,face=1;
+const CL=['戰士','法師','遊俠','牧師'],CD=['受到傷害 -20%','法杖傷害 +25%','移動 +15%、射擊更快','脫戰回血翻倍、戰鬥中持續回血'],cls=()=>S.hero&&S.hero.c!=null?S.hero.c:-1;
+function classPick(then){dlg('<b>選擇職業</b><br><span style="color:var(--dim)">'+CL.map((c,i)=>c+'：'+CD[i]).join('<br>')+'</span>',CL.map((c,i)=>[c,()=>{S.hero.c=i;save();ui();shut();if(then)setTimeout(then,300)}]))}
+function dice(title,cb){const d=dlg('<b>'+title+'</b><div id="d20" style="font-size:44px;text-align:center;margin:8px 0">🎲 20</div>',[]);let n=0;const iv=setInterval(()=>{const e=d.querySelector('#d20');if(e)e.textContent='🎲 '+(1+Math.floor(Math.random()*20));if(++n>=12){clearInterval(iv);const r=1+Math.floor(Math.random()*20);if(e)e.textContent='🎲 '+r+(r==20?' 大成功！':r==1?' 大失敗…':'');snd(r>=15?'up':r<=5?'bad':'ok');setTimeout(()=>cb(r),800)}},70)}
+function setQ(q){S.q=q;save();renderer.setPixelRatio(q==0?1:Math.min(devicePixelRatio,2));resize();msg('畫質已設為'+['低','中','高'][q]+'（樹木數量下個區域生效）。');shut()}
+function impSave(){const f=document.createElement('input');f.type='file';f.accept='.json,application/json';f.onchange=async()=>{try{const t=await f.files[0].text(),o=JSON.parse(t);if(!o||typeof o!='object'||o.stones==null)throw 0;localStorage.setItem('xjsave',t);location.reload()}catch(e){msg('存檔格式不正確，匯入失敗。')}};f.click();shut()}
+function setMenu(){const q=S.q==null?2:S.q;dlg('<b>設定</b><br><span style="color:var(--dim)">畫質：'+['低','中','高'][q]+'・職業：'+(cls()>=0?CL[cls()]:'未選')+'</span>',[['畫質：低',()=>setQ(0)],['畫質：中',()=>setQ(1)],['畫質：高',()=>setQ(2)],['更換職業',()=>classPick()],['匯出存檔',()=>{saveF('絕冬夜行存檔.json',JSON.stringify(S));shut()}],['匯入存檔',impSave],['清除舊小說',()=>{if(confirm('確定清除全部小說章節？')){S.novel=[];save();msg('小說已清除。')}shut()}],['離開',shut]])}
+$('set').onclick=()=>{if(!busy)setMenu()};
+const mx=$('mm').getContext('2d');
+function drawMM(){const c=Math.cos(camYaw),sn=Math.sin(camYaw),R=44;mx.clearRect(0,0,96,96);mx.save();mx.translate(48,48);mx.beginPath();mx.arc(0,0,R,0,6.283);mx.fillStyle='rgba(8,16,34,.6)';mx.fill();mx.strokeStyle='rgba(200,225,255,.35)';mx.stroke();
+  const dot=(v,col,r)=>{const dx=v.x-P.x,dz=v.z-P.z;let px=(dx*c-dz*sn)*.72,py=(dx*sn+dz*c)*.72;const L=Math.hypot(px,py);if(L>R-3){px*=(R-3)/L;py*=(R-3)/L}mx.fillStyle=col;mx.beginPath();mx.arc(px,py,r,0,6.283);mx.fill()};
+  const CC={npc:'#c79bff',npc2:'#ffe08a',portal:'#ffffff',part:'#6aa8ff',herb:'#7ee0c0',chest:'#f0c668',bad:'#ff5c4d'};
+  items.forEach(it=>{if(it.gone||(it.t=='bad'&&((info.crisis==2&&!it.m.visible)||(info.crisis==5&&it.k!=crisisN-crisisLeft))))return;it.m.getWorldPosition(wp);dot(wp,CC[it.t]||'#fff',2.6)});
+  mons.forEach(o=>{if(o.w.lengthSq())dot(o.w,o.boss?'#ff2222':'#ff9a4a',o.boss?5:2)});
+  mx.fillStyle='#6fd8ff';mx.beginPath();mx.moveTo(0,-5);mx.lineTo(4,4);mx.lineTo(-4,4);mx.closePath();mx.fill();mx.font='13px serif';mx.fillText(isNight?'🌙':'☀️',-R+4,-R+18);mx.restore()}
+function bossTxt(){const c=ST[(S.arc||0)%5];return '<br>【主線】第 '+((S.arc||0)+1)+' 章・'+c[0]+(bossHere?'　'+c[2]+' <em>'+(bossDead?'已擊敗':boss?'戰鬥中':'尚未現身')+'</em>':'')}
+function prologue(){dlg('<b>序章・封城之夜</b><br>絕冬城封城的第三十夜，鐘聲停了，街巷只剩咳嗽聲與焚燒屍衣的煙。傳聞瘟疫並非天災，而是有人在暗處散播。你受託查明源頭，每個區域都藏著線索，每三個區域就有一名主線頭目守著真相。',[['踏上旅程',shut]])}
+function bossStart(){bossAnn=true;const a=S.arc||0,c=ST[a%5],hp=50+a*35+info.aura*8,sp=new THREE.Sprite(new THREE.SpriteMaterial({map:emo(c[1]),alphaTest:.3}));sp.scale.set(6,6,1);
+  const pl=P.clone().applyQuaternion(planet.quaternion.clone().invert()),ax2=new THREE.Vector3(Math.random()-.5,Math.random()-.5,Math.random()-.5).cross(pl).normalize();
+  sp.position.copy(pl.clone().applyAxisAngle(ax2,38/R0).setLength(R0+2.6));planet.add(sp);boss={s:sp,ev:false,w:new THREE.Vector3(),hp,max:hp,boss:1,big:1,name:c[2]};mons.push(boss);
+  snd('bad');ui();dlg('<b>【主線】第 '+(a+1)+' 章・'+c[0]+'</b><br>'+c[3]+'<br><span style="color:var(--dim)">頭目：'+c[2]+'（血量 '+hp+'）。牠在狂暴階段會加速，記得拉開距離。</span>',[['迎戰',()=>{dice('先攻擲骰（d20）',r=>{if(r>=15&&boss){boss.hp=Math.max(1,boss.hp-boss.max*.15);msg('先攻成功！頭目開場受創。')}else if(r<=5){php=Math.max(10,php-15);msg('先攻失敗，你被打了個措手不及。')}else msg('勢均力敵，戰鬥開始！');shut()})}]])}
+function bossWin(){const a=S.arc||0,c=ST[a%5];boss=null;bossDead=true;S.arc=a+1;EV.boss=c[2];mons.forEach(o=>planet.remove(o.s));mons=[];
+  gain(120+a*40,200+a*60);S.herb=(S.herb||0)+5;qEv('boss',1);snd('up');save();ui();
+  dlg('<b>頭目倒下：'+c[2]+'</b><br>'+c[4]+'<br><span style="color:var(--dim)">第 '+(a+1)+' 章完成，獲得素材 5 份。</span>'+(a%5==4?'<br>新的長夜即將開始，頭目會變得更強。':''),[['繼續',shut]])}
 function fbChap(n,h,inf,ev,pn){const a=[],nm=h.name,pr=h.g?'她':'他';
   a.push('絕冬城封城的第 '+n+' 夜，'+nm+'冒著風雪抵達'+inf.name+'。此地是'+N.land[inf.land]+'，魔力場'+N.aura[inf.aura]+'，瘟疫的陰影籠罩街巷，'+N.crisis[inf.crisis]+'的徵兆愈發明顯。');
   if(ev.beast)a.push('一路上，'+pr+'以法杖「'+SW[S.sw||0]+'」擊退了 '+ev.beast+' 隻怪物，魔法所過之處，魔力隨之震盪。');
@@ -421,7 +463,7 @@ function fbChap(n,h,inf,ev,pn){const a=[],nm=h.name,pr=h.g?'她':'他';
   if(ev.forgeW||ev.forgeA||ev.sword)a.push('夜裡'+pr+'守在鍛爐旁，看著魔晶核心緩緩脈動，'+(ev.sword?'升級法杖，':'')+(ev.forgeW?'鍛造武器，':'')+(ev.forgeA?'鍛造護甲，':'')+'爐火映著側臉。');
   if(ev.alch||ev.craft)a.push(pr+'也趁隙調製了藥水與卷軸，備著對抗瘟疫之用。');
   if(ev.qd&&ev.qd.length)a.push('此地居民託付之事，'+pr+'一一辦妥：'+ev.qd.join('、')+'。');
-  if(pn!='無')a.push('同行的'+pn+'默默相伴，隊伍上下未曾言退。');
+  if(ev.boss)a.push(nm+'在'+inf.name+'與'+ev.boss+'展開死鬥，終於將其擊倒，主線的謎團又揭開了一角。');if(pn!='無')a.push('同行的'+pn+'默默相伴，隊伍上下未曾言退。');
   a.push('離開時，'+inf.name+'漸遠。'+nm+'望著等階「'+REALM[lvl()]+'」的徽記，在冒險日誌上寫下新的一行，知道絕冬城的長夜仍未過去。');
   return{title:inf.name+'之夜',text:a.join('\n\n')}}
 async function getSampler(){
@@ -435,7 +477,7 @@ async function getSampler(){
 async function writeChap(inf,ev){
   const L=S.novel=S.novel||[],n=L.length+1,h=S.hero||{g:0,name:'雷恩'},pn=(S.party||[]).map(k=>NPC[k][0]).join('、')||'無',pv=L[L.length-1];
   msg('艾拉：正在把這段旅程寫成小說…');
-  const facts='冒險者：'+h.name+'（'+(h.g?'女':'男')+'）；等階：'+REALM[lvl()]+'；法杖：'+SW[S.sw||0]+'；魔晶核心：'+FL[S.fl||1]+'；同伴：'+pn+'\n區域：'+inf.name+'（地貌'+N.land[inf.land]+'，魔力場'+N.aura[inf.aura]+'，危機'+N.crisis[inf.crisis]+'，委託人身分'+NPC[inf.power][0]+'）\n事件：擊退怪物 '+(ev.beast||0)+' 隻；擊退邪教徒 '+(ev.evil||0)+' 名；鍛造武器 '+(ev.forgeW||0)+' 次、護甲 '+(ev.forgeA||0)+' 次、調製藥水 '+(ev.alch||0)+' 次、製作道具 '+(ev.craft||0)+' 次、升級法杖 '+(ev.sword||0)+' 次；主線補給'+(ev.done?'已收集齊':'未完成')+'；危機'+(ev.crisisOk?'已化解':'未化解')+'；傳送門'+(ev.fixed?'已修復':'未修復')+'；完成的居民委託：'+((ev.qd||[]).join('、')||'無');
+  const facts='冒險者：'+h.name+'（'+(h.g?'女':'男')+'）；職業：'+(h.c!=null?CL[h.c]:'冒險者')+'；等階：'+REALM[lvl()]+'；法杖：'+SW[S.sw||0]+'；魔晶核心：'+FL[S.fl||1]+'；同伴：'+pn+'\n區域：'+inf.name+'（地貌'+N.land[inf.land]+'，魔力場'+N.aura[inf.aura]+'，危機'+N.crisis[inf.crisis]+'，委託人身分'+NPC[inf.power][0]+'）\n事件：擊退怪物 '+(ev.beast||0)+' 隻；擊退邪教徒 '+(ev.evil||0)+' 名；鍛造武器 '+(ev.forgeW||0)+' 次、護甲 '+(ev.forgeA||0)+' 次、調製藥水 '+(ev.alch||0)+' 次、製作道具 '+(ev.craft||0)+' 次、升級法杖 '+(ev.sword||0)+' 次；主線補給'+(ev.done?'已收集齊':'未完成')+'；危機'+(ev.crisisOk?'已化解':'未化解')+'；傳送門'+(ev.fixed?'已修復':'未修復')+'；完成的居民委託：'+((ev.qd||[]).join('、')||'無')+'；擊敗主線頭目：'+(ev.boss||'無');
   let r=null;
   try{const sm=await getSampler();if(sm){const o=await sm('你是奇幻冒險長篇小說作者，文風沉穩、帶有史詩感與冒險精神，以「冒險者日誌」式的第三人稱敘事為基調，節奏明快，故事背景為《絕冬城之夜》（Neverwinter Nights）所在的絕冬城與劍灣一帶（龍與地下城・費倫世界）：寒冬與封城之下，城中蔓延著名為「哀嚎死亡」（Wailing Death）的瘟疫，背後有邪教陰謀；可自然帶入絕冬城、深水城、盧斯坎、風雪、疫病、封鎖等背景元素。請依下列遊戲紀錄寫「第 '+n+' 集」，繁體中文，650 到 900 字，內容原創，不得使用官方戰役中的既有角色名，也不得照抄原作劇情或台詞，須為原創情節；地名與背景可使用絕冬城、深水城、盧斯坎等公開設定，並可使用精靈、矮人、哥布林、龍等通用種族與生物。第一行是標題（不加符號與集數），空一行後是正文，並自然融入所有事件、與前情銜接。\n【前情】'+(pv?'第 '+pv.n+' 集《'+pv.title+'》：'+pv.text.slice(0,200):'（開篇）')+'\n【本集紀錄】\n'+facts,{modelTier:'default',cache:false});const t=(o.text||'').trim().split('\n');const ti=t[0].replace(/^[#\s第\d集：:・\-]+/,'').slice(0,24),bd=t.slice(1).join('\n').trim();if(bd.length>150)r={title:ti||('第 '+n+' 集'),text:bd}}}catch(e){}
   if(!r)r=fbChap(n,h,inf,ev,pn);
