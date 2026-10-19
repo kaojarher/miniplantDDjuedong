@@ -1,5 +1,5 @@
 // 絕冬夜行 service worker：離線可玩（小說生成仍需連網）
-const VER = 'xj-v7';
+const VER = 'xj-v8';
 const SHELL = [
   './',
   'index.html',

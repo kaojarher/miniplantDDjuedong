@@ -50,6 +50,8 @@ button:active{background:var(--jade);color:var(--bg)}
 #mb{font-size:30px;line-height:1;padding:5px 8px;border-radius:50%;background:var(--panel);animation:fl 2s ease-in-out infinite}
 #mt{position:static;display:none;font-size:13px;max-width:52vw}
 @keyframes fl{50%{transform:translateY(-5px)}}
+#cc{right:8px;bottom:calc(env(safe-area-inset-bottom,0px) + 104px);display:grid;grid-template-columns:repeat(2,38px);gap:4px;padding:5px;opacity:.88;z-index:3}
+#cc button{width:38px;height:38px;padding:0;font-size:16px;touch-action:none;-webkit-user-select:none}
 #dlg input{user-select:text;-webkit-user-select:text}
 </style>
 </head>
@@ -64,6 +66,7 @@ button:active{background:var(--jade);color:var(--bg)}
 <div class="p" id="arrow"><div id="ai">▲</div><div id="ad"></div></div>
 <div class="p" id="fu"></div>
 <div class="p" id="go"><button id="daily">每日挑戰</button><button id="jr">日誌</button><button id="nv">小說</button><button id="yard">製作</button><button id="mu">音效：開</button><button id="inst" style="display:none">安裝</button><button id="sail">啟程・前往下一個區域</button></div>
+<div class="p" id="cc"><button data-k="zi" aria-label="拉近鏡頭">＋</button><button data-k="zo" aria-label="拉遠鏡頭">－</button><button data-k="l" aria-label="向左旋轉視角">⟲</button><button data-k="r" aria-label="向右旋轉視角">⟳</button><button data-k="u" aria-label="俯視">▲</button><button data-k="dn" aria-label="平視">▼</button><button data-k="rs" aria-label="重設視角" style="grid-column:span 2;width:80px">重設</button></div>
 <div id="mei"><button id="mb" aria-label="艾拉導覽">🧚</button><div class="p" id="mt"></div></div>
 <div class="p" id="dlg"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -243,12 +246,25 @@ $('sail').onclick=()=>{
   S.stones-=c;S.visited++;save();daily=false;writeChap(info,Object.assign({done,crisisOk:crisisLeft==0&&!crFail,fixed},EV));EV={};build(nextSeed);
 };
 
-const keys={};let drag=null,vec={x:0,y:0};
+const keys={},held={};let drag=null,vec={x:0,y:0},camYaw=0,camPitch=.7266,camZoom=1,lastFar=75;
+const cz=v=>Math.max(.45,Math.min(2.6,v)),cp=v=>Math.max(.2,Math.min(1.45,v));
+document.querySelectorAll('#cc button').forEach(b=>{const k=b.dataset.k;if(k=='rs'){b.onclick=()=>{camYaw=0;camPitch=.7266;camZoom=1};return}const on=e=>{e.preventDefault();held[k]=1},off=()=>{held[k]=0};b.addEventListener('pointerdown',on);['pointerup','pointerleave','pointercancel'].forEach(t=>b.addEventListener(t,off))});
 addEventListener('keydown',e=>keys[e.key.toLowerCase()]=1);addEventListener('keyup',e=>keys[e.key.toLowerCase()]=0);
 const cv=$('c');
-cv.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY};cv.setPointerCapture(e.pointerId)});
-cv.addEventListener('pointermove',e=>{if(!drag)return;let dx=(e.clientX-drag.x)/60,dy=(e.clientY-drag.y)/60,m=Math.hypot(dx,dy);if(m>1){dx/=m;dy/=m}vec.x=dx;vec.y=dy});
-const end=()=>{drag=null;vec.x=vec.y=0};cv.addEventListener('pointerup',end);cv.addEventListener('pointercancel',end);
+const PT2=new Map();let g2=null,rc=null;
+cv.addEventListener('pointerdown',e=>{cv.setPointerCapture(e.pointerId);PT2.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(e.pointerType=='mouse'&&(e.button==2||e.shiftKey)){rc={x:e.clientX,y:e.clientY};return}
+  if(PT2.size>=2){end();const a=[...PT2.values()];g2={d:Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y)||1,a:Math.atan2(a[1].y-a[0].y,a[1].x-a[0].x)};return}
+  drag={x:e.clientX,y:e.clientY}});
+cv.addEventListener('pointermove',e=>{const p=PT2.get(e.pointerId);if(p){p.x=e.clientX;p.y=e.clientY}
+  if(rc){camYaw-=(e.clientX-rc.x)*.008;camPitch=cp(camPitch+(e.clientY-rc.y)*.006);rc.x=e.clientX;rc.y=e.clientY;return}
+  if(g2&&PT2.size>=2){const a=[...PT2.values()],d=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y)||1,an=Math.atan2(a[1].y-a[0].y,a[1].x-a[0].x);camZoom=cz(camZoom*g2.d/d);camYaw+=an-g2.a;g2.d=d;g2.a=an;return}
+  if(!drag)return;let dx=(e.clientX-drag.x)/60,dy=(e.clientY-drag.y)/60,m=Math.hypot(dx,dy);if(m>1){dx/=m;dy/=m}vec.x=dx;vec.y=dy});
+const end=()=>{drag=null;vec.x=vec.y=0};
+const up2=e=>{PT2.delete(e.pointerId);if(PT2.size<2)g2=null;rc=null;end()};
+cv.addEventListener('pointerup',up2);cv.addEventListener('pointercancel',up2);
+cv.addEventListener('wheel',e=>{e.preventDefault();camZoom=cz(camZoom*Math.exp(e.deltaY*.001))},{passive:false});
+cv.addEventListener('contextmenu',e=>e.preventDefault());
 
 const q=new THREE.Quaternion(),ax=new THREE.Vector3(),wp=new THREE.Vector3();let last=performance.now();
 function loop(now){
@@ -256,6 +272,11 @@ function loop(now){
   let ix=vec.x+((keys.d||keys.arrowright)?1:0)-((keys.a||keys.arrowleft)?1:0);
   let iy=-vec.y+((keys.w||keys.arrowup)?1:0)-((keys.s||keys.arrowdown)?1:0);
   const rv=info.crisis==3&&crisisLeft>0&&crisisLeft<crisisN&&!crFail&&Math.floor(now/5000)%2==1;if(rv!=crRev){crRev=rv;if(rv)msg('魔法失控！操控暫時反轉。')}if(rv){ix=-ix;iy=-iy}
+  {const hY=((held.r||keys.e)?1:0)-((held.l||keys.q)?1:0),hP=((held.u||keys.r)?1:0)-((held.dn||keys.f)?1:0),hZ=((held.zo||keys['-'])?1:0)-((held.zi||keys['=']||keys['+'])?1:0);
+    if(hY)camYaw+=hY*dt*1.6;if(hP)camPitch=cp(camPitch+hP*dt*.9);if(hZ)camZoom=cz(camZoom*Math.exp(hZ*dt*.9));
+    const Rc=12.04*camZoom,ce=Math.cos(camPitch);cam.position.set(Rc*ce*Math.sin(camYaw),R0+Rc*Math.sin(camPitch),Rc*ce*Math.cos(camYaw));cam.lookAt(0,R0-.5,0);
+    const fr=75*Math.max(1,camZoom);if(Math.abs(fr-lastFar)>.5){lastFar=fr;cam.far=fr;cam.updateProjectionMatrix()}if(scene.fog){scene.fog.near=25*camZoom;scene.fog.far=62*camZoom}
+    const c=Math.cos(camYaw),sn=Math.sin(camYaw),nx=ix*c-iy*sn,ny=ix*sn+iy*c;ix=nx;iy=ny}
   const m=Math.hypot(ix,iy);
   if(m>.05&&!busy){if(m>1){ix/=m;iy/=m}
     ax.set(iy,0,ix).normalize();q.setFromAxisAngle(ax,Math.min(m,1)*dt*.06*(spdT>0?1.4:1));planet.quaternion.premultiply(q);
@@ -283,7 +304,7 @@ function loop(now){
   const ctE=$('ct');if(ctE)ctE.textContent=crT>0?'　'+Math.ceil(crT)+' 秒':'';
   let best=null,bd=1e9;items.forEach(it=>{if(it.gone||(it.t=='npc'&&accepted)||(it.t=='npc2'&&QS[it.i].st!=2)||(it.t=='portal'&&(parts<3||fixed))||(it.t=='bad'&&((info.crisis==2&&!it.m.visible)||(info.crisis==5&&it.k!=crisisN-crisisLeft))))return;it.m.getWorldPosition(wp);const d=wp.distanceTo(P);if(d<bd){bd=d;best=wp.clone()}});
   const ar=$('arrow');
-  if(best){const ang=Math.atan2(best.x,-best.z),arc=Math.round(Math.acos(Math.min(1,best.dot(P)/(best.length()*R0)))*R0);$('ai').style.transform='rotate('+ang+'rad)';$('ad').textContent=arc+' 步';ar.style.display='block';const dx=Math.sin(ang),dy=-Math.cos(ang),hw=innerWidth/2-48,hh=innerHeight/2-170,t=Math.min(Math.abs(dx)>1e-3?hw/Math.abs(dx):1e9,Math.abs(dy)>1e-3?hh/Math.abs(dy):1e9);ar.style.transform='translate('+(innerWidth/2+dx*t-32)+'px,'+(innerHeight/2+dy*t-30)+'px)'}else ar.style.display='none';
+  if(best){const cy=Math.cos(camYaw),sy=Math.sin(camYaw),ang=Math.atan2(best.x*cy-best.z*sy,-best.x*sy-best.z*cy),arc=Math.round(Math.acos(Math.min(1,best.dot(P)/(best.length()*R0)))*R0);$('ai').style.transform='rotate('+ang+'rad)';$('ad').textContent=arc+' 步';ar.style.display='block';const dx=Math.sin(ang),dy=-Math.cos(ang),hw=innerWidth/2-48,hh=innerHeight/2-170,t=Math.min(Math.abs(dx)>1e-3?hw/Math.abs(dx):1e9,Math.abs(dy)>1e-3?hh/Math.abs(dy):1e9);ar.style.transform='translate('+(innerWidth/2+dx*t-32)+'px,'+(innerHeight/2+dy*t-30)+'px)'}else ar.style.display='none';
   if(!busy)fight(dt);
   if(daily&&!dDone&&!busy){dT+=dt;const e=$('dt');if(e)e.textContent=dT.toFixed(1)+' 秒';
     if(done&&fixed&&(crisisLeft==0||crFail)){dDone=true;const t=+(dT+(crFail?15:0)).toFixed(1),k=String(seed);if(!S.dbest||S.dbest.k!=k||t<S.dbest.t)S.dbest={k,t};save();dlg('<b>每日挑戰完成</b><br>種子 '+seed+'<br>成績 '+t+' 秒'+(crFail?'（含危機失敗加罰 15 秒）':'')+'<br>今日最佳 '+S.dbest.t+' 秒',[['日誌',journal],['關閉',shut]])}}
