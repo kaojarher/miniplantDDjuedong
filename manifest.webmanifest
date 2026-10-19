@@ -1,0 +1,19 @@
+{
+  "name": "絕冬夜行",
+  "short_name": "絕冬夜行",
+  "description": "封城的絕冬城，瘟疫與寒夜之下的冒險，每離開一個區域就寫成一則冒險日誌。",
+  "lang": "zh-Hant",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#070d1c",
+  "theme_color": "#070d1c",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
